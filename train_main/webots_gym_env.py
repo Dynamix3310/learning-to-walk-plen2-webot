@@ -210,15 +210,17 @@ class PlenWalkEnv(gym.Env):
         # 3. 穩定性懲罰
         r_stable = -0.5 * (abs(rpy[0]) + abs(rpy[1]))
         
-        # 4. 能量與平滑
-        r_energy = -0.01 * np.sum(np.square(action))
+        # 4.姿勢懲罰 (Pose Penalty)
+        r_pose = -0.5 * np.sum(np.square(self.current_real_pos))
+
+        # 5. 平滑度懲罰 (Smoothness)
         r_smooth = -0.05 * np.sum(np.square(action - self.prev_action))
         
-        # 5. 抗推力獎勵 (包含推力期間 + 推力結束後的穩定期)
+        # 6. 抗推力獎勵 (包含推力期間 + 推力結束後的穩定期)
         is_under_pressure = (self.current_push_steps > 0) or (self.post_push_steps > 0)
         r_resist = 5.0 if is_under_pressure and is_standing else 0.0
         
-        reward = r_alive + r_vel + r_stable + r_energy + r_smooth + r_resist
+        reward = r_alive + r_vel + r_stable + r_pose + r_smooth + r_resist
         
         terminated = False
         truncated = False
