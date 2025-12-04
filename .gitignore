@@ -1,0 +1,5 @@
+train_main/models
+train_main/__pycache__
+train_main/ppo_plen_teacher_logs
+controllers/model/
+tmp/

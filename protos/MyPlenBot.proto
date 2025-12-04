@@ -1,0 +1,1573 @@
+#VRML_SIM R2023b utf8
+# license: Apache License 2.0
+# license url: http://www.apache.org/licenses/LICENSE-2.0
+# [Modified for MG90S Actuator Net]
+# maxTorque and maxVelocity increased to allow Kinematic Override by Neural Network.
+
+PROTO MyPlenBot [
+  field  SFVec3f      translation      0 0 0
+  field  SFRotation   rotation         0 0 1 0
+  field  SFString     name             "MyPlenBot"  # Is `Robot.name`.
+  field  SFString     controller       "void"       # Is `Robot.controller`.
+  field  MFString     controllerArgs   []           # Is `Robot.controllerArgs`.
+  field  SFString     customData       ""           # Is `Robot.customData`.
+  field  SFBool       supervisor       FALSE        # Is `Robot.supervisor`.
+  field  SFBool       synchronization  TRUE         # Is `Robot.synchronization`.
+  field  SFBool       selfCollision    FALSE        # Is `Robot.selfCollision`.
+]
+{
+  Robot {
+    translation IS translation
+    rotation IS rotation
+    controller IS controller
+    controllerArgs IS controllerArgs
+    customData IS customData
+    supervisor IS supervisor
+    synchronization IS synchronization
+    selfCollision IS selfCollision
+    physics Physics {
+      density 0.001 
+    }
+    boundingObject Pose {
+      translation 0 0 0 
+      children [
+        Box {
+          size 0.07 0.1 0.1 # 尺寸 (X, Y, Z)
+        }
+      ]
+    }
+    children [
+      InertialUnit {
+        name "imu/data inertial"
+      }
+      Accelerometer {
+        name "imu/data accelerometer"
+      }
+      Gyro {
+        name "imu/data gyro"
+      }
+      Compass {
+        name "imu/data compass"
+      }
+      GPS {
+        name "plen/odom gps"
+      }
+      InertialUnit {
+        name "plen/odom inertial"
+      }
+      Gyro {
+        name "plen/odom gyro"
+      }
+      Solid {
+        children [
+          Transform {
+            scale 0.001000 0.001000 0.001000
+            children [
+              Shape {
+                appearance DEF red_mat PBRAppearance {
+                  baseColor 0.000000 0.000000 0.000000
+                  roughness 1.000000
+                  metalness 0
+                }
+                geometry DEF torso Mesh {
+                  url "meshes/torso.stl"
+                }
+              }
+            ]
+          }
+          Solid {
+            translation -0.036000 0.000000 -0.012000
+            children [
+              Transform {
+                scale 0.001000 0.001000 0.001000
+                children [
+                  Shape {
+                    appearance DEF purple_mat PBRAppearance {
+                      baseColor 0.420000 0.050000 0.680000
+                      roughness 1.000000
+                      metalness 0
+                    }
+                    geometry DEF battery Mesh {
+                      url "meshes/battery.stl"
+                    }
+                  }
+                ]
+              }
+            ]
+            name "battery"
+            boundingObject Pose {
+              translation 0.007500 0.000000 0.011500
+              children [
+                Box {
+                   size 0.011000 0.051000 0.046000
+                }
+              ]
+            }
+            physics Physics {
+              density -1
+              mass 0.064000
+              centerOfMass [ 0.007500 0.000000 0.011500 ]
+              inertiaMatrix [
+                1.193067e-05 1.193067e-05 1.451733e-05
+                0.000000e+00 0.000000e+00 0.000000e+00
+              ]
+            }
+          }
+          Solid {
+            translation -0.006500 0.000000 0.056000
+            children [
+              Transform {
+                scale 0.001000 0.001000 0.001000
+                children [
+                  Shape {
+                    appearance USE purple_mat
+                    geometry DEF head Mesh {
+                      url "meshes/head.stl"
+                    }
+                  }
+                ]
+              }
+            ]
+            name "head"
+            boundingObject Box {
+               size 0.040000 0.040000 0.040000
+            }
+            physics Physics {
+              density -1
+              mass 0.010000
+              centerOfMass [ 0.000000 0.000000 0.000000 ]
+              inertiaMatrix [
+                2.666667e-06 2.666667e-06 2.666667e-06
+                0.000000e+00 0.000000e+00 0.000000e+00
+              ]
+            }
+          }
+          Solid {
+            translation -0.006600 -0.022000 0.030800
+            rotation -0.000000 -0.707107 0.707107 3.141593
+            children [
+              Transform {
+                rotation 0.000000 0.000000 1.000000 3.141593
+                scale 0.001000 0.001000 0.001000
+                children [
+                  Shape {
+                    appearance DEF orange_mat PBRAppearance {
+                      baseColor 1.000000 0.490000 0.000000
+                      roughness 1.000000
+                      metalness 0
+                    }
+                    geometry DEF servo Mesh {
+                      url "meshes/servo.stl"
+                    }
+                  }
+                ]
+              }
+            ]
+            name "rt_servo"
+            boundingObject Pose {
+              translation 0.000000 0.006250 0.000000
+              rotation 0.000000 0.000000 1.000000 3.141593
+              children [
+                Box {
+                   size 0.012000 0.025000 0.025000
+                }
+              ]
+            }
+            physics Physics {
+              density -1
+              mass 0.012000
+              centerOfMass [ 0.000000 0.006250 0.000000 ]
+              inertiaMatrix [
+                7.690000e-07 7.690000e-07 7.690000e-07
+                0.000000e+00 0.000000e+00 0.000000e+00
+              ]
+            }
+          }
+          Solid {
+            translation -0.006600 0.022000 0.030800
+            rotation -1.000000 0.000000 0.000000 1.570796
+            children [
+              Transform {
+                rotation 0.000000 0.000000 1.000000 3.141593
+                scale 0.001000 0.001000 0.001000
+                children [
+                  Shape {
+                    appearance USE orange_mat
+                    geometry USE servo
+                  }
+                ]
+              }
+            ]
+            name "lt_servo"
+            boundingObject Pose {
+              translation 0.000000 0.006250 0.000000
+              rotation 0.000000 0.000000 1.000000 3.141593
+              children [
+                Box {
+                   size 0.012000 0.025000 0.025000
+                }
+              ]
+            }
+            physics Physics {
+              density -1
+              mass 0.012000
+              centerOfMass [ 0.000000 0.006250 0.000000 ]
+              inertiaMatrix [
+                7.690000e-07 7.690000e-07 7.690000e-07
+                0.000000e+00 0.000000e+00 0.000000e+00
+              ]
+            }
+          }
+          Solid {
+            translation -0.006600 -0.022800 -0.024750
+            rotation 0.000000 1.000000 0.000000 3.141593
+            children [
+              Transform {
+                rotation 0.000000 0.000000 1.000000 3.141593
+                scale 0.001000 0.001000 0.001000
+                children [
+                  Shape {
+                    appearance USE orange_mat
+                    geometry USE servo
+                  }
+                ]
+              }
+              HingeJoint {
+                jointParameters HingeJointParameters {
+                  axis 0.000000 -0.000000 -1.000000
+                  anchor 0.000000 0.000000 0.014200
+                }
+                device [
+                  RotationalMotor {
+                    name "rb_servo_r_hip"
+                    maxVelocity 100.0 # Modified
+                    minPosition -1.57
+                    maxPosition 1.57
+                    maxTorque 100.0 # Modified
+                  }
+                  PositionSensor {
+                    name "rb_servo_r_hip_sensor"
+                  }
+                ]
+                endPoint Solid {
+                  translation 0.000000 0.000000 0.014200
+                  rotation 0.707107 0.707107 0.000000 3.141593
+                  children [
+                    Transform {
+                      rotation 0.000000 1.000000 0.000000 3.141593
+                      scale 0.001000 0.001000 0.001000
+                      children [
+                        Shape {
+                          appearance USE orange_mat
+                          geometry DEF rhip Mesh {
+                            url "meshes/rhip.stl"
+                          }
+                        }
+                      ]
+                    }
+                    HingeJoint {
+                      jointParameters HingeJointParameters {
+                        axis 0.000000 -1.000000 0.000000
+                        anchor 0.005450 -0.002000 -0.012810
+                      }
+                      device [
+                        RotationalMotor {
+                          name "r_hip_r_thigh"
+                          maxVelocity 100.0 # Modified
+                          minPosition -0.15
+                          maxPosition 1.5
+                          maxTorque 100.0 # Modified
+                        }
+                        PositionSensor {
+                          name "r_hip_r_thigh_sensor"
+                        }
+                      ]
+                      endPoint Solid {
+                        translation 0.005450 -0.002000 -0.012810
+                        rotation 1.000000 0.000000 0.000000 3.141593
+                        children [
+                          Transform {
+                            translation -0.007500 0.000000 -0.007500
+                            scale 0.001000 0.001000 0.001000
+                            children [
+                              Shape {
+                                appearance USE purple_mat
+                                geometry DEF rthigh Mesh {
+                                  url "meshes/rthigh.stl"
+                                }
+                              }
+                            ]
+                          }
+                          HingeJoint {
+                            jointParameters HingeJointParameters {
+                              axis -1.000000 0.000000 0.000000
+                              anchor -0.023000 0.007500 0.012750
+                            }
+                            device [
+                              RotationalMotor {
+                                name "r_thigh_r_knee"
+                                maxVelocity 100.0 # Modified
+                                minPosition -0.95
+                                maxPosition 0.75
+                                maxTorque 100.0 # Modified
+                              }
+                              PositionSensor {
+                                name "r_thigh_r_knee_sensor"
+                              }
+                            ]
+                            endPoint Solid {
+                              translation -0.023000 0.007500 0.012750
+                              rotation 0.577350 -0.577350 0.577350 2.094395
+                              children [
+                                Transform {
+                                  scale 0.001000 0.001000 0.001000
+                                  children [
+                                    Shape {
+                                      appearance USE red_mat
+                                      geometry DEF rknee Mesh {
+                                        url "meshes/rknee.stl"
+                                      }
+                                    }
+                                  ]
+                                }
+                                Solid {
+                                  translation 0.028000 -0.012800 0.000500
+                                  rotation -1.000000 0.000000 0.000000 1.570796
+                                  children [
+                                    Transform {
+                                      rotation 0.000000 0.000000 1.000000 3.141593
+                                      scale 0.001000 0.001000 0.001000
+                                      children [
+                                        Shape {
+                                          appearance USE orange_mat
+                                          geometry USE servo
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                  name "r_knee_servo"
+                                  boundingObject Pose {
+                                    translation 0.000000 0.006250 0.000000
+                                    rotation 0.000000 0.000000 1.000000 3.141593
+                                    children [
+                                      Box {
+                                         size 0.012000 0.025000 0.025000
+                                      }
+                                    ]
+                                  }
+                                  physics Physics {
+                                    density -1
+                                    mass 0.012000
+                                    centerOfMass [ 0.000000 0.006250 0.000000 ]
+                                    inertiaMatrix [
+                                      7.690000e-07 7.690000e-07 7.690000e-07
+                                      0.000000e+00 0.000000e+00 0.000000e+00
+                                    ]
+                                  }
+                                }
+                                HingeJoint {
+                                  jointParameters HingeJointParameters {
+                                    axis 0.000000 1.000000 0.000000
+                                    anchor 0.028100 -0.014600 0.000450
+                                  }
+                                  device [
+                                    RotationalMotor {
+                                      name "r_knee_r_shin"
+                                      maxVelocity 100.0 # Modified
+                                      minPosition -0.9
+                                      maxPosition 0.3
+                                      maxTorque 100.0 # Modified
+                                    }
+                                    PositionSensor {
+                                      name "r_knee_r_shin_sensor"
+                                    }
+                                  ]
+                                  endPoint Solid {
+                                    translation 0.028100 -0.014600 0.000450
+                                    children [
+                                      Transform {
+                                        translation 0.016800 0.000000 -0.009100
+                                        scale 0.001000 0.001000 0.001000
+                                        children [
+                                          Shape {
+                                            appearance USE orange_mat
+                                            geometry DEF rshin Mesh {
+                                              url "meshes/rshin.stl"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                      HingeJoint {
+                                        jointParameters HingeJointParameters {
+                                          axis 0.000000 -1.000000 0.000000
+                                          anchor 0.033750 -0.017000 0.000000
+                                        }
+                                        device [
+                                          RotationalMotor {
+                                            name "r_shin_r_ankle"
+                                            maxVelocity 100.0 # Modified
+                                            minPosition -0.95
+                                            maxPosition 1.2
+                                            maxTorque 100.0 # Modified
+                                          }
+                                          PositionSensor {
+                                            name "r_shin_r_ankle_sensor"
+                                          }
+                                        ]
+                                        endPoint Solid {
+                                          translation 0.033750 -0.017000 0.000000
+                                          rotation 0.577350 -0.577350 0.577350 2.094395
+                                          children [
+                                            Transform {
+                                              scale 0.001000 0.001000 0.001000
+                                              children [
+                                                Shape {
+                                                  appearance USE purple_mat
+                                                  geometry DEF rankle Mesh {
+                                                    url "meshes/rankle.stl"
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                            HingeJoint {
+                                              jointParameters HingeJointParameters {
+                                                axis 1.000000 0.000000 -0.000000
+                                                anchor 0.004200 -0.012700 -0.007400
+                                              }
+                                              device [
+                                                RotationalMotor {
+                                                  name "r_ankle_r_foot"
+                                                  maxVelocity 100.0 # Modified
+                                                  minPosition -0.8
+                                                  maxPosition 0.4
+                                                  maxTorque 100.0 # Modified
+                                                }
+                                                PositionSensor {
+                                                  name "r_ankle_r_foot_sensor"
+                                                }
+                                              ]
+                                              endPoint Solid {
+                                                translation 0.004200 -0.012700 -0.007400
+                                                rotation -0.577350 -0.577350 -0.577350 2.094395
+                                                children [
+                                                  Transform {
+                                                    translation -0.008500 0.000000 -0.019800
+                                                    scale 0.001000 0.001000 0.001000
+                                                    children [
+                                                      Shape {
+                                                        appearance USE red_mat
+                                                        geometry DEF rfoot Mesh {
+                                                          url "meshes/rfoot.stl"
+                                                        }
+                                                      }
+                                                    ]
+                                                  }
+                                                  Solid {
+                                                    translation -0.009250 0.000000 -0.018000
+                                                    children [
+                                                      Shape {
+                                                        appearance USE orange_mat
+                                                        geometry Box {
+                                                           size 0.021000 0.052867 0.002000
+                                                        }
+                                                      }
+                                                    ]
+                                                    name "rfs_link"
+                                                    boundingObject Box {
+                                                       size 0.021000 0.052867 0.002000
+                                                    }
+                                                    physics Physics {
+                                                      density -1
+                                                      mass 0.01
+                                                      centerOfMass [ 0.000000 0.000000 0.000000 ]
+                                                      inertiaMatrix [
+                                                        1.280000e-08 1.280000e-08 1.280000e-08
+                                                        0.000000e+00 0.000000e+00 0.000000e+00
+                                                      ]
+                                                    }
+                                                  }
+                                                ]
+                                                name "r_foot"
+                                                boundingObject Pose {
+                                                  translation -0.009250 0.000000 -0.017000
+                                                  children [
+                                                    Box {
+                                                       size 0.041000 0.062867 0.004000
+                                                    }
+                                                  ]
+                                                }
+                                                physics Physics {
+                                                  density -1
+                                                  mass 0.015000
+                                                  centerOfMass [ -0.009250 0.000000 -0.009000 ]
+                                                  inertiaMatrix [
+                                                    2.121250e-06 2.121250e-06 7.041575e-06
+                                                    0.000000e+00 0.000000e+00 0.000000e+00
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          ]
+                                          name "r_ankle"
+                                          boundingObject Pose {
+                                            translation 0.007000 -0.007000 -0.014000
+                                            children [
+                                              Box {
+                                                 size 0.028000 0.028000 0.028000
+                                              }
+                                            ]
+                                          }
+                                          physics Physics {
+                                            density -1
+                                            mass 0.040000
+                                            centerOfMass [ 0.007000 -0.007000 -0.014000 ]
+                                            inertiaMatrix [
+                                              5.226667e-06 5.226667e-06 5.226667e-06
+                                              0.000000e+00 0.000000e+00 0.000000e+00
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    ]
+                                    name "r_shin"
+                                    boundingObject Pose {
+                                      translation 0.018000 0.000000 0.004000
+                                      children [
+                                        Box {
+                                           size 0.045000 0.040000 0.023000
+                                        }
+                                      ]
+                                    }
+                                    physics Physics {
+                                      density -1
+                                      mass 0.006965
+                                      centerOfMass [ 0.018000 0.000000 0.004000 ]
+                                      inertiaMatrix [
+                                        1.482384e-06 1.482384e-06 2.104010e-06
+                                        0.000000e+00 0.000000e+00 0.000000e+00
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                              name "r_knee"
+                              boundingObject Pose {
+                                translation 0.017500 -0.015000 0.000000
+                                children [
+                                  Box {
+                                     size 0.038000 0.030000 0.024000
+                                  }
+                                ]
+                              }
+                              physics Physics {
+                                density -1
+                                mass 0.005004
+                                centerOfMass [ 0.017500 -0.015000 0.000000 ]
+                                inertiaMatrix [
+                                  8.423400e-07 8.423400e-07 9.774480e-07
+                                  0.000000e+00 0.000000e+00 0.000000e+00
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                        name "r_thigh"
+                        boundingObject Pose {
+                          translation -0.007000 0.000000 0.007000
+                          children [
+                            Box {
+                               size 0.028000 0.028000 0.028000
+                            }
+                          ]
+                        }
+                        physics Physics {
+                          density -1
+                          mass 0.040000
+                          centerOfMass [ -0.007000 0.000000 0.007000 ]
+                          inertiaMatrix [
+                            5.226667e-06 5.226667e-06 5.226667e-06
+                            0.000000e+00 0.000000e+00 0.000000e+00
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                  name "r_hip"
+                  boundingObject Pose {
+                    translation 0.000000 0.000000 -0.009000
+                    rotation 0.000000 1.000000 0.000000 3.141593
+                    children [
+                      Box {
+                         size 0.025000 0.035000 0.018000
+                      }
+                    ]
+                  }
+                  physics Physics {
+                    density -1
+                    mass 0.002568
+                    centerOfMass [ 0.000000 0.000000 -0.009000 ]
+                    inertiaMatrix [
+                      2.030860e-07 2.030860e-07 3.959000e-07
+                      0.000000e+00 0.000000e+00 0.000000e+00
+                    ]
+                  }
+                }
+              }
+            ]
+            name "rb_servo"
+            boundingObject Pose {
+              translation 0.000000 0.006250 0.000000
+              rotation 0.000000 0.000000 1.000000 3.141593
+              children [
+                Box {
+                   size 0.012000 0.025000 0.025000
+                }
+              ]
+            }
+            physics Physics {
+              density -1
+              mass 0.012000
+              centerOfMass [ 0.000000 0.006250 0.000000 ]
+              inertiaMatrix [
+                7.690000e-07 7.690000e-07 7.690000e-07
+                0.000000e+00 0.000000e+00 0.000000e+00
+              ]
+            }
+          }
+          Solid {
+            translation -0.006600 0.022800 -0.024750
+            rotation 1.000000 0.000000 0.000000 3.141593
+            children [
+              Transform {
+                rotation 0.000000 0.000000 1.000000 3.141593
+                scale 0.001000 0.001000 0.001000
+                children [
+                  Shape {
+                    appearance USE orange_mat
+                    geometry USE servo
+                  }
+                ]
+              }
+              HingeJoint {
+                jointParameters HingeJointParameters {
+                  axis 0.000000 -0.000000 -1.000000
+                  anchor 0.000000 0.000000 0.014200
+                }
+                device [
+                  RotationalMotor {
+                    name "lb_servo_l_hip"
+                    maxVelocity 100.0 # Modified
+                    minPosition -1.57
+                    maxPosition 1.57
+                    maxTorque 100.0 # Modified
+                  }
+                  PositionSensor {
+                    name "lb_servo_l_hip_sensor"
+                  }
+                ]
+                endPoint Solid {
+                  translation 0.000000 0.000000 0.014200
+                  rotation 0.707107 0.707107 0.000000 3.141593
+                  children [
+                    Transform {
+                      translation 0.000000 0.000000 0.001000
+                      rotation 0.000000 0.000000 1.000000 3.141593
+                      scale 0.001000 0.001000 0.001000
+                      children [
+                        Shape {
+                          appearance USE orange_mat
+                          geometry DEF lhip Mesh {
+                            url "meshes/lhip.stl"
+                          }
+                        }
+                      ]
+                    }
+                    HingeJoint {
+                      jointParameters HingeJointParameters {
+                        axis 0.000000 1.000000 0.000000
+                        anchor 0.005500 0.017000 -0.012650
+                      }
+                      device [
+                        RotationalMotor {
+                          name "l_hip_l_thigh"
+                          maxVelocity 100.0 # Modified
+                          minPosition -1.5
+                          maxPosition 0.15
+                          maxTorque 100.0 # Modified
+                        }
+                        PositionSensor {
+                          name "l_hip_l_thigh_sensor"
+                        }
+                      ]
+                      endPoint Solid {
+                        translation 0.005500 0.017000 -0.012650
+                        rotation 0.577350 0.577350 0.577350 2.094395
+                        children [
+                          Transform {
+                            rotation 0.000000 1.000000 0.000000 1.570796
+                            scale 0.001000 0.001000 0.001000
+                            children [
+                              Shape {
+                                appearance USE purple_mat
+                                geometry USE rankle
+                              }
+                            ]
+                          }
+                          HingeJoint {
+                            jointParameters HingeJointParameters {
+                              axis 0.000000 -0.000000 -1.000000
+                              anchor -0.007400 -0.012800 -0.008600
+                            }
+                            device [
+                              RotationalMotor {
+                                name "l_thigh_l_knee"
+                                maxVelocity 100.0 # Modified
+                                minPosition -0.75
+                                maxPosition 0.95
+                                maxTorque 100.0 # Modified
+                              }
+                              PositionSensor {
+                                name "l_thigh_l_knee_sensor"
+                              }
+                            ]
+                            endPoint Solid {
+                              translation -0.007400 -0.012800 -0.008600
+                              rotation -0.577350 0.577350 -0.577350 2.094395
+                              children [
+                                Transform {
+                                  scale 0.001000 0.001000 0.001000
+                                  children [
+                                    Shape {
+                                      appearance USE red_mat
+                                      geometry DEF lknee Mesh {
+                                        url "meshes/lknee.stl"
+                                      }
+                                    }
+                                  ]
+                                }
+                                Solid {
+                                  translation 0.028000 0.001450 0.000000
+                                  rotation -0.000000 0.707107 0.707107 3.141593
+                                  children [
+                                    Transform {
+                                      rotation 0.000000 0.000000 1.000000 3.141593
+                                      scale 0.001000 0.001000 0.001000
+                                      children [
+                                        Shape {
+                                          appearance USE orange_mat
+                                          geometry USE servo
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                  name "l_knee_servo"
+                                  boundingObject Pose {
+                                    translation 0.000000 0.006250 0.000000
+                                    rotation 0.000000 0.000000 1.000000 3.141593
+                                    children [
+                                      Box {
+                                         size 0.012000 0.025000 0.025000
+                                      }
+                                    ]
+                                  }
+                                  physics Physics {
+                                    density -1
+                                    mass 0.012000
+                                    centerOfMass [ 0.000000 0.006250 0.000000 ]
+                                    inertiaMatrix [
+                                      7.690000e-07 7.690000e-07 7.690000e-07
+                                      0.000000e+00 0.000000e+00 0.000000e+00
+                                    ]
+                                  }
+                                }
+                                HingeJoint {
+                                  jointParameters HingeJointParameters {
+                                    axis 0.000000 1.000000 0.000000
+                                    anchor 0.028100 -0.000200 0.000450
+                                  }
+                                  device [
+                                    RotationalMotor {
+                                      name "l_knee_l_shin"
+                                      maxVelocity 100.0 # Modified
+                                      minPosition -0.3
+                                      maxPosition 0.9
+                                      maxTorque 100.0 # Modified
+                                    }
+                                    PositionSensor {
+                                      name "l_knee_l_shin_sensor"
+                                    }
+                                  ]
+                                  endPoint Solid {
+                                    translation 0.028100 -0.000200 0.000450
+                                    rotation 0.000000 1.000000 0.000000 3.141593
+                                    children [
+                                      Transform {
+                                        translation -0.016900 0.000000 -0.009100
+                                        scale 0.001000 0.001000 0.001000
+                                        children [
+                                          Shape {
+                                            appearance USE orange_mat
+                                            geometry USE rshin
+                                          }
+                                        ]
+                                      }
+                                      HingeJoint {
+                                        jointParameters HingeJointParameters {
+                                          axis 0.000000 -1.000000 0.000000
+                                          anchor -0.033750 -0.002000 0.000000
+                                        }
+                                        device [
+                                          RotationalMotor {
+                                            name "l_shin_l_ankle"
+                                            maxVelocity 100.0 # Modified
+                                            minPosition -1.2
+                                            maxPosition 0.95
+                                            maxTorque 100.0 # Modified
+                                          }
+                                          PositionSensor {
+                                            name "l_shin_l_ankle_sensor"
+                                          }
+                                        ]
+                                        endPoint Solid {
+                                          translation -0.033750 -0.002000 0.000000
+                                          rotation 0.707107 0.000000 -0.707107 3.141593
+                                          children [
+                                            Transform {
+                                              translation -0.007500 0.000000 -0.007500
+                                              scale 0.001000 0.001000 0.001000
+                                              children [
+                                                Shape {
+                                                  appearance USE purple_mat
+                                                  geometry USE rthigh
+                                                }
+                                              ]
+                                            }
+                                            HingeJoint {
+                                              jointParameters HingeJointParameters {
+                                                axis -1.000000 -0.000000 0.000000
+                                                anchor -0.004200 0.007500 0.012800
+                                              }
+                                              device [
+                                                RotationalMotor {
+                                                  name "l_ankle_l_foot"
+                                                  maxVelocity 100.0 # Modified
+                                                  minPosition -0.4
+                                                  maxPosition 0.8
+                                                  maxTorque 100.0 # Modified
+                                                }
+                                                PositionSensor {
+                                                  name "l_ankle_l_foot_sensor"
+                                                }
+                                              ]
+                                              endPoint Solid {
+                                                translation -0.004200 0.007500 0.012800
+                                                rotation 0.707107 -0.707107 -0.000000 3.141593
+                                                children [
+                                                  Transform {
+                                                    translation 0.008850 0.000000 -0.014200
+                                                    scale 0.001000 0.001000 0.001000
+                                                    children [
+                                                      Shape {
+                                                        appearance USE red_mat
+                                                        geometry DEF lfoot Mesh {
+                                                          url "meshes/lfoot.stl"
+                                                        }
+                                                      }
+                                                    ]
+                                                  }
+                                                  Solid {
+                                                    translation 0.009250 0.000000 -0.018000
+                                                    children [
+                                                      Shape {
+                                                        appearance USE orange_mat
+                                                        geometry Box {
+                                                           size 0.021000 0.052867 0.002000
+                                                        }
+                                                      }
+                                                    ]
+                                                    name "lfs_link"
+                                                    boundingObject Box {
+                                                       size 0.021000 0.052867 0.002000
+                                                    }
+                                                    physics Physics {
+                                                      density -1
+                                                      mass 0.01
+                                                      centerOfMass [ 0.000000 0.000000 0.000000 ]
+                                                      inertiaMatrix [
+                                                        1.280000e-08 1.280000e-08 1.280000e-08
+                                                        0.000000e+00 0.000000e+00 0.000000e+00
+                                                      ]
+                                                    }
+                                                  }
+                                                ]
+                                                name "l_foot"
+                                                boundingObject Pose {
+                                                  translation 0.009250 0.000000 -0.017000
+                                                  children [
+                                                    Box {
+                                                       size 0.041000 0.062867 0.004000
+                                                    }
+                                                  ]
+                                                }
+                                                physics Physics {
+                                                  density -1
+                                                  mass 0.015000
+                                                  centerOfMass [ 0.009250 0.000000 -0.009000 ]
+                                                  inertiaMatrix [
+                                                    2.121250e-06 2.121250e-06 7.041575e-06
+                                                    0.000000e+00 0.000000e+00 0.000000e+00
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          ]
+                                          name "l_ankle"
+                                          boundingObject Pose {
+                                            translation -0.007000 0.000000 0.007000
+                                            children [
+                                              Box {
+                                                 size 0.028000 0.028000 0.028000
+                                              }
+                                            ]
+                                          }
+                                          physics Physics {
+                                            density -1
+                                            mass 0.040000
+                                            centerOfMass [ -0.007000 0.000000 0.007000 ]
+                                            inertiaMatrix [
+                                              5.226667e-06 5.226667e-06 5.226667e-06
+                                              0.000000e+00 0.000000e+00 0.000000e+00
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    ]
+                                    name "l_shin"
+                                    boundingObject Pose {
+                                      translation -0.018000 0.000000 0.004000
+                                      children [
+                                        Box {
+                                           size 0.045000 0.040000 0.023000
+                                        }
+                                      ]
+                                    }
+                                    physics Physics {
+                                      density -1
+                                      mass 0.006965
+                                      centerOfMass [ -0.018000 0.000000 0.004000 ]
+                                      inertiaMatrix [
+                                        1.482384e-06 1.482384e-06 2.104010e-06
+                                        0.000000e+00 0.000000e+00 0.000000e+00
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                              name "l_knee"
+                              boundingObject Pose {
+                                translation 0.017500 -0.001000 0.000000
+                                children [
+                                  Box {
+                                     size 0.038000 0.030000 0.024000
+                                  }
+                                ]
+                              }
+                              physics Physics {
+                                density -1
+                                mass 0.005004
+                                centerOfMass [ 0.017500 -0.001000 0.000000 ]
+                                inertiaMatrix [
+                                  8.423400e-07 8.423400e-07 9.774480e-07
+                                  0.000000e+00 0.000000e+00 0.000000e+00
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                        name "l_thigh"
+                        boundingObject Pose {
+                          translation -0.014000 -0.007000 -0.007000
+                          rotation 0.000000 1.000000 0.000000 1.570796
+                          children [
+                            Box {
+                               size 0.028000 0.028000 0.028000
+                            }
+                          ]
+                        }
+                        physics Physics {
+                          density -1
+                          mass 0.040000
+                          centerOfMass [ -0.014000 -0.007000 -0.007000 ]
+                          inertiaMatrix [
+                            5.226667e-06 5.226667e-06 5.226667e-06
+                            0.000000e+00 0.000000e+00 0.000000e+00
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                  name "l_hip"
+                  boundingObject Pose {
+                    translation 0.000000 0.000000 -0.009000
+                    rotation 0.000000 0.000000 1.000000 3.141593
+                    children [
+                      Box {
+                         size 0.025000 0.035000 0.018000
+                      }
+                    ]
+                  }
+                  physics Physics {
+                    density -1
+                    mass 0.002568
+                    centerOfMass [ 0.000000 0.000000 -0.009000 ]
+                    inertiaMatrix [
+                      2.030860e-07 2.030860e-07 3.959000e-07
+                      0.000000e+00 0.000000e+00 0.000000e+00
+                    ]
+                  }
+                }
+              }
+            ]
+            name "lb_servo"
+            boundingObject Pose {
+              translation 0.000000 0.006250 0.000000
+              rotation 0.000000 0.000000 1.000000 3.141593
+              children [
+                Box {
+                   size 0.012000 0.025000 0.025000
+                }
+              ]
+            }
+            physics Physics {
+              density -1
+              mass 0.012000
+              centerOfMass [ 0.000000 0.006250 0.000000 ]
+              inertiaMatrix [
+                7.690000e-07 7.690000e-07 7.690000e-07
+                0.000000e+00 0.000000e+00 0.000000e+00
+              ]
+            }
+          }
+          HingeJoint {
+            jointParameters HingeJointParameters {
+              axis -0.000000 -1.000000 -0.000000
+              anchor -0.006600 -0.038000 0.030800
+            }
+            device [
+              RotationalMotor {
+                name "torso_r_shoulder"
+                maxVelocity 100.0 # Modified
+                minPosition -1.57
+                maxPosition 1.57
+                maxTorque 100.0 # Modified
+              }
+              PositionSensor {
+                name "torso_r_shoulder_sensor"
+              }
+            ]
+            endPoint Solid {
+              translation -0.006600 -0.038000 0.030800
+              rotation 0.577350 -0.577350 0.577350 2.094395
+              children [
+                Transform {
+                  scale 0.001000 0.001000 0.001000
+                  children [
+                    Shape {
+                      appearance USE purple_mat
+                      geometry DEF shoulder Mesh {
+                        url "meshes/shoulder.stl"
+                      }
+                    }
+                  ]
+                }
+                HingeJoint {
+                  jointParameters HingeJointParameters {
+                    axis 0.000000 1.000000 -0.000000
+                    anchor -0.005350 0.000600 0.012650
+                  }
+                  device [
+                    RotationalMotor {
+                      name "r_shoulder_rs_servo"
+                      maxVelocity 100.0 # Modified
+                      minPosition -0.15
+                      maxPosition 1.57
+                      maxTorque 100.0 # Modified
+                    }
+                    PositionSensor {
+                      name "r_shoulder_rs_servo_sensor"
+                    }
+                  ]
+                  endPoint Solid {
+                    translation -0.005350 0.000600 0.012650
+                    rotation -0.577350 0.577350 0.577350 2.094395
+                    children [
+                      Transform {
+                        rotation 0.000000 0.000000 1.000000 3.141593
+                        scale 0.001000 0.001000 0.001000
+                        children [
+                          Shape {
+                            appearance USE orange_mat
+                            geometry USE servo
+                          }
+                        ]
+                      }
+                      Solid {
+                        translation 0.000000 0.019500 -0.002000
+                        rotation -1.000000 0.000000 0.000000 1.570796
+                        children [
+                          Transform {
+                            scale 0.001000 0.001000 0.001000
+                            children [
+                              Shape {
+                                appearance USE red_mat
+                                geometry DEF arm Mesh {
+                                  url "meshes/arm.stl"
+                                }
+                              }
+                            ]
+                          }
+                          Solid {
+                            translation 0.000000 0.002000 0.019500
+                            rotation -1.000000 0.000000 0.000000 1.570796
+                            children [
+                              Transform {
+                                rotation 0.000000 0.000000 1.000000 3.141593
+                                scale 0.001000 0.001000 0.001000
+                                children [
+                                  Shape {
+                                    appearance USE orange_mat
+                                    geometry USE servo
+                                  }
+                                ]
+                              }
+                              HingeJoint {
+                                jointParameters HingeJointParameters {
+                                  axis -0.000000 -0.000000 -1.000000
+                                  anchor 0.000000 0.000000 -0.001500
+                                }
+                                device [
+                                  RotationalMotor {
+                                    name "re_servo_r_elbow"
+                                    maxVelocity 100.0 # Modified
+                                    minPosition -0.2
+                                    maxPosition 0.35
+                                    maxTorque 100.0 # Modified
+                                  }
+                                  PositionSensor {
+                                    name "re_servo_r_elbow_sensor"
+                                  }
+                                ]
+                                endPoint Solid {
+                                  translation 0.000000 0.000000 -0.001500
+                                  rotation -0.577350 -0.577350 0.577350 2.094395
+                                  children [
+                                    Transform {
+                                      translation -0.013500 0.000000 0.000000
+                                      scale 0.001000 0.001000 0.001000
+                                      children [
+                                        Shape {
+                                          appearance USE purple_mat
+                                          geometry DEF elbow Mesh {
+                                            url "meshes/elbow.stl"
+                                          }
+                                        }
+                                      ]
+                                    }
+                                    Solid {
+                                      translation -0.030000 0.000000 0.000000
+                                      rotation 0.707107 0.000000 -0.707107 3.141593
+                                      children [
+                                        Transform {
+                                          scale 0.001000 0.001000 0.001000
+                                          children [
+                                            Shape {
+                                              appearance USE red_mat
+                                              geometry DEF hand Mesh {
+                                                url "meshes/hand.stl"
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                      name "r_hand"
+                                      boundingObject Box {
+                                         size 0.019000 0.034000 0.035000
+                                      }
+                                      physics Physics {
+                                        density -1
+                                        mass 0.008305
+                                        centerOfMass [ 0.000000 0.000000 0.000000 ]
+                                        inertiaMatrix [
+                                          1.097644e-06 1.097644e-06 1.049890e-06
+                                          0.000000e+00 0.000000e+00 0.000000e+00
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                  name "r_elbow"
+                                  boundingObject Pose {
+                                    translation -0.006750 0.000000 0.000000
+                                    children [
+                                      Box {
+                                         size 0.027000 0.034000 0.014000
+                                      }
+                                    ]
+                                  }
+                                  physics Physics {
+                                    density -1
+                                    mass 0.003046
+                                    centerOfMass [ -0.006750 0.000000 0.000000 ]
+                                    inertiaMatrix [
+                                      2.347958e-07 2.347958e-07 4.784758e-07
+                                      0.000000e+00 0.000000e+00 0.000000e+00
+                                    ]
+                                  }
+                                }
+                              }
+                            ]
+                            name "re_servo"
+                            boundingObject Pose {
+                              translation 0.000000 0.006250 0.000000
+                              rotation 0.000000 0.000000 1.000000 3.141593
+                              children [
+                                Box {
+                                   size 0.012000 0.025000 0.025000
+                                }
+                              ]
+                            }
+                            physics Physics {
+                              density -1
+                              mass 0.012000
+                              centerOfMass [ 0.000000 0.006250 0.000000 ]
+                              inertiaMatrix [
+                                7.690000e-07 7.690000e-07 7.690000e-07
+                                0.000000e+00 0.000000e+00 0.000000e+00
+                              ]
+                            }
+                          }
+                        ]
+                        name "r_arm"
+                        boundingObject Box {
+                           size 0.015000 0.035000 0.050000
+                        }
+                        physics Physics {
+                          density -1
+                          mass 0.005091
+                          centerOfMass [ 0.000000 0.000000 0.000000 ]
+                          inertiaMatrix [
+                            1.156081e-06 1.156081e-06 6.151625e-07
+                            0.000000e+00 0.000000e+00 0.000000e+00
+                          ]
+                        }
+                      }
+                    ]
+                    name "rs_servo"
+                    boundingObject Pose {
+                      translation 0.000000 0.006250 0.000000
+                      rotation 0.000000 0.000000 1.000000 3.141593
+                      children [
+                        Box {
+                           size 0.012000 0.025000 0.025000
+                        }
+                      ]
+                    }
+                    physics Physics {
+                      density -1
+                      mass 0.012000
+                      centerOfMass [ 0.000000 0.006250 0.000000 ]
+                      inertiaMatrix [
+                        7.690000e-07 7.690000e-07 7.690000e-07
+                        0.000000e+00 0.000000e+00 0.000000e+00
+                      ]
+                    }
+                  }
+                }
+              ]
+              name "r_shoulder"
+              boundingObject Pose {
+                translation 0.000000 0.000000 0.012500
+                children [
+                  Box {
+                     size 0.018000 0.035000 0.025000
+                  }
+                ]
+              }
+              physics Physics {
+                density -1
+                mass 0.002954
+                centerOfMass [ 0.000000 0.000000 0.012500 ]
+                inertiaMatrix [
+                  2.336122e-07 2.336122e-07 3.813122e-07
+                  0.000000e+00 0.000000e+00 0.000000e+00
+                ]
+              }
+            }
+          }
+          HingeJoint {
+            jointParameters HingeJointParameters {
+              axis -0.000000 1.000000 -0.000000
+              anchor -0.006600 0.038000 0.030800
+            }
+            device [
+              RotationalMotor {
+                name "torso_l_shoulder"
+                maxVelocity 100.0 # Modified
+                minPosition -1.57
+                maxPosition 1.57
+                maxTorque 100.0 # Modified
+              }
+              PositionSensor {
+                name "torso_l_shoulder_sensor"
+              }
+            ]
+            endPoint Solid {
+              translation -0.006600 0.038000 0.030800
+              rotation -0.577350 -0.577350 -0.577350 2.094395
+              children [
+                Transform {
+                  rotation -1.000000 0.000000 0.000000 3.141593
+                  scale 0.001000 0.001000 0.001000
+                  children [
+                    Shape {
+                      appearance USE purple_mat
+                      geometry USE lhip
+                    }
+                  ]
+                }
+                HingeJoint {
+                  jointParameters HingeJointParameters {
+                    axis -0.000000 -1.000000 -0.000000
+                    anchor -0.005350 -0.000600 0.012650
+                  }
+                  device [
+                    RotationalMotor {
+                      name "l_shoulder_ls_servo"
+                      maxVelocity 100.0 # Modified
+                      minPosition -1.57
+                      maxPosition 0.15
+                      maxTorque 100.0 # Modified
+                    }
+                    PositionSensor {
+                      name "l_shoulder_ls_servo_sensor"
+                    }
+                  ]
+                  endPoint Solid {
+                    translation -0.005350 -0.000600 0.012650
+                    rotation 0.577350 -0.577350 0.577350 2.094395
+                    children [
+                      Transform {
+                        rotation 0.000000 0.000000 1.000000 3.141593
+                        scale 0.001000 0.001000 0.001000
+                        children [
+                          Shape {
+                            appearance USE orange_mat
+                            geometry USE servo
+                          }
+                        ]
+                      }
+                      Solid {
+                        translation 0.000000 0.019500 -0.002000
+                        rotation -1.000000 0.000000 0.000000 1.570796
+                        children [
+                          Transform {
+                            scale 0.001000 0.001000 0.001000
+                            children [
+                              Shape {
+                                appearance USE red_mat
+                                geometry USE arm
+                              }
+                            ]
+                          }
+                          Solid {
+                            translation 0.000000 0.002000 0.019500
+                            rotation -1.000000 0.000000 0.000000 1.570796
+                            children [
+                              Transform {
+                                rotation 0.000000 0.000000 1.000000 3.141593
+                                scale 0.001000 0.001000 0.001000
+                                children [
+                                  Shape {
+                                    appearance USE orange_mat
+                                    geometry USE servo
+                                  }
+                                ]
+                              }
+                              HingeJoint {
+                                jointParameters HingeJointParameters {
+                                  axis -0.000000 -0.000000 -1.000000
+                                  anchor 0.000000 0.000000 -0.001500
+                                }
+                                device [
+                                  RotationalMotor {
+                                    name "le_servo_l_elbow"
+                                    maxVelocity 100.0 # Modified
+                                    minPosition -0.35
+                                    maxPosition 0.2
+                                    maxTorque 100.0 # Modified
+                                  }
+                                  PositionSensor {
+                                    name "le_servo_l_elbow_sensor"
+                                  }
+                                ]
+                                endPoint Solid {
+                                  translation 0.000000 0.000000 -0.001500
+                                  rotation -0.577350 -0.577350 0.577350 2.094395
+                                  children [
+                                    Transform {
+                                      translation -0.013500 0.000000 0.000000
+                                      scale 0.001000 0.001000 0.001000
+                                      children [
+                                        Shape {
+                                          appearance USE purple_mat
+                                          geometry USE elbow
+                                        }
+                                      ]
+                                    }
+                                    Solid {
+                                      translation -0.030000 0.000000 0.000000
+                                      rotation 0.000000 -1.000000 0.000000 1.570796
+                                      children [
+                                        Transform {
+                                          scale 0.001000 0.001000 0.001000
+                                          children [
+                                            Shape {
+                                              appearance USE red_mat
+                                              geometry USE hand
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                      name "l_hand"
+                                      boundingObject Box {
+                                         size 0.019000 0.034000 0.035000
+                                      }
+                                      physics Physics {
+                                        density -1
+                                        mass 0.008305
+                                        centerOfMass [ 0.000000 0.000000 0.000000 ]
+                                        inertiaMatrix [
+                                          1.097644e-06 1.097644e-06 1.049890e-06
+                                          0.000000e+00 0.000000e+00 0.000000e+00
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                  name "l_elbow"
+                                  boundingObject Pose {
+                                    translation -0.006750 0.000000 0.000000
+                                    children [
+                                      Box {
+                                         size 0.027000 0.034000 0.014000
+                                      }
+                                    ]
+                                  }
+                                  physics Physics {
+                                    density -1
+                                    mass 0.003046
+                                    centerOfMass [ -0.006750 0.000000 0.000000 ]
+                                    inertiaMatrix [
+                                      2.347958e-07 2.347958e-07 4.784758e-07
+                                      0.000000e+00 0.000000e+00 0.000000e+00
+                                    ]
+                                  }
+                                }
+                              }
+                            ]
+                            name "le_servo"
+                            boundingObject Pose {
+                              translation 0.000000 0.006250 0.000000
+                              rotation 0.000000 0.000000 1.000000 3.141593
+                              children [
+                                Box {
+                                   size 0.012000 0.025000 0.025000
+                                }
+                              ]
+                            }
+                            physics Physics {
+                              density -1
+                              mass 0.012000
+                              centerOfMass [ 0.000000 0.006250 0.000000 ]
+                              inertiaMatrix [
+                                7.690000e-07 7.690000e-07 7.690000e-07
+                                0.000000e+00 0.000000e+00 0.000000e+00
+                              ]
+                            }
+                          }
+                        ]
+                        name "l_arm"
+                        boundingObject Box {
+                           size 0.015000 0.035000 0.050000
+                        }
+                        physics Physics {
+                          density -1
+                          mass 0.005091
+                          centerOfMass [ 0.000000 0.000000 0.000000 ]
+                          inertiaMatrix [
+                            1.156081e-06 1.156081e-06 6.151625e-07
+                            0.000000e+00 0.000000e+00 0.000000e+00
+                          ]
+                        }
+                      }
+                    ]
+                    name "ls_servo"
+                    boundingObject Pose {
+                      translation 0.000000 0.006250 0.000000
+                      rotation 0.000000 0.000000 1.000000 3.141593
+                      children [
+                        Box {
+                           size 0.012000 0.025000 0.025000
+                        }
+                      ]
+                    }
+                    physics Physics {
+                      density -1
+                      mass 0.012000
+                      centerOfMass [ 0.000000 0.006250 0.000000 ]
+                      inertiaMatrix [
+                        7.690000e-07 7.690000e-07 7.690000e-07
+                        0.000000e+00 0.000000e+00 0.000000e+00
+                      ]
+                    }
+                  }
+                }
+              ]
+              name "l_shoulder"
+              boundingObject Pose {
+                translation 0.000000 0.000000 0.012500
+                rotation -1.000000 0.000000 0.000000 3.141593
+                children [
+                  Box {
+                     size 0.018000 0.035000 0.025000
+                  }
+                ]
+              }
+              physics Physics {
+                density -1
+                mass 0.002954
+                centerOfMass [ 0.000000 0.000000 0.012500 ]
+                inertiaMatrix [
+                  2.336122e-07 2.336122e-07 3.813122e-07
+                  0.000000e+00 0.000000e+00 0.000000e+00
+                ]
+              }
+            }
+          }
+        ]
+        name "torso"
+        boundingObject Box {
+           size 0.045000 0.048000 0.075000
+        }
+        physics Physics {
+          density -1
+          mass 0.043968
+          centerOfMass [ 0.000000 0.000000 0.000000 ]
+          inertiaMatrix [
+            2.802960e-05 2.802960e-05 1.586146e-05
+            0.000000e+00 0.000000e+00 0.000000e+00
+          ]
+        }
+      }
+    ]
+    name IS name
+  }
+}
