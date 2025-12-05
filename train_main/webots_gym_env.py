@@ -161,7 +161,7 @@ class PlenWalkEnv(gym.Env):
         # 1. 觸發新的推力
         if self.step_count > 0 and self.step_count % self.push_interval_steps == 0:
             angle = np.random.uniform(0, 2 * np.pi)
-            force_mag = np.random.uniform(2.5, self.MAX_FORCE_MAGNITUDE)
+            force_mag = np.random.uniform(0.25, self.MAX_FORCE_MAGNITUDE)
             self.current_force_vec = [force_mag * np.cos(angle),force_mag * np.sin(angle), 0]
             self.current_push_steps = self.push_duration_steps
             self.post_push_steps = 0 # 新推力開始，重置後續穩定計時
