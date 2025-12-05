@@ -111,7 +111,7 @@ class PlenWalkEnv(gym.Env):
         # Push Logic
         self.PUSH_INTERVAL_SEC = 4.0
         self.PUSH_DURATION_SEC = 0.4
-        self.FORCE_MAGNITUDE = 0.7
+        self.MAX_FORCE_MAGNITUDE = 0.4
         self.push_interval_steps = int(self.PUSH_INTERVAL_SEC * 1000 / self.timestep)
         self.push_duration_steps = int(self.PUSH_DURATION_SEC * 1000 / self.timestep)
         self.push_force = np.zeros(3)
@@ -161,7 +161,8 @@ class PlenWalkEnv(gym.Env):
         # 1. 觸發新的推力
         if self.step_count > 0 and self.step_count % self.push_interval_steps == 0:
             angle = np.random.uniform(0, 2 * np.pi)
-            self.current_force_vec = [self.FORCE_MAGNITUDE * np.cos(angle), self.FORCE_MAGNITUDE * np.sin(angle), 0]
+            force_mag = np.random.uniform(0.1, self.MAX_FORCE_MAGNITUDE)
+            self.current_force_vec = [force_mag * np.cos(angle),force_mag * np.sin(angle), 0]
             self.current_push_steps = self.push_duration_steps
             self.post_push_steps = 0 # 新推力開始，重置後續穩定計時
             
@@ -202,16 +203,16 @@ class PlenWalkEnv(gym.Env):
         is_standing = (current_z > -0.13) and (abs(rpy[0]) < 1.0) and (abs(rpy[1]) < 1.0)
         
         # 1. 存活獎勵
-        r_alive = 3.0 if is_standing else 0.0
+        r_alive = 10.0 if is_standing else 0.0
         
-        # 2. 速度獎勵 (暫時關閉，設為 0)
-        r_vel = 0.0 * vel[0] 
+        # 2. 速度懲罰
+        r_vel = -0.5 * (vel[0]**2 + vel[1]**2)
         
         # 3. 穩定性懲罰
-        r_stable = -0.5 * (abs(rpy[0]) + abs(rpy[1]))
+        r_stable = -0.2 * (abs(rpy[0]) + abs(rpy[1]))
         
         # 4.姿勢懲罰 (Pose Penalty)
-        r_pose = -0.5 * np.sum(np.square(self.current_real_pos))
+        r_pose = -5 * np.sum(np.square(self.current_real_pos))
 
         # 5. 平滑度懲罰 (Smoothness)
         r_smooth = -0.05 * np.sum(np.square(action - self.prev_action))
@@ -226,7 +227,7 @@ class PlenWalkEnv(gym.Env):
         truncated = False
         if current_z < -0.13 or abs(rpy[0]) > 1.0 or abs(rpy[1]) > 1.0: 
             terminated = True
-            reward -= 50.0
+            reward -= 10.0
             
         self.prev_action = action
         return obs, reward, terminated, truncated, {}
