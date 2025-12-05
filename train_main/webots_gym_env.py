@@ -110,8 +110,8 @@ class PlenWalkEnv(gym.Env):
         
         # Push Logic
         self.PUSH_INTERVAL_SEC = 4.0
-        self.PUSH_DURATION_SEC = 0.4
-        self.MAX_FORCE_MAGNITUDE = 0.4
+        self.PUSH_DURATION_SEC = 0.5
+        self.MAX_FORCE_MAGNITUDE = 0.5
         self.push_interval_steps = int(self.PUSH_INTERVAL_SEC * 1000 / self.timestep)
         self.push_duration_steps = int(self.PUSH_DURATION_SEC * 1000 / self.timestep)
         self.push_force = np.zeros(3)
@@ -161,7 +161,7 @@ class PlenWalkEnv(gym.Env):
         # 1. 觸發新的推力
         if self.step_count > 0 and self.step_count % self.push_interval_steps == 0:
             angle = np.random.uniform(0, 2 * np.pi)
-            force_mag = np.random.uniform(0.1, self.MAX_FORCE_MAGNITUDE)
+            force_mag = np.random.uniform(2.5, self.MAX_FORCE_MAGNITUDE)
             self.current_force_vec = [force_mag * np.cos(angle),force_mag * np.sin(angle), 0]
             self.current_push_steps = self.push_duration_steps
             self.post_push_steps = 0 # 新推力開始，重置後續穩定計時
@@ -199,6 +199,9 @@ class PlenWalkEnv(gym.Env):
         vel = self.robot_node.getVelocity()
         current_z = self.robot_node.getPosition()[2]
         
+        #是否處於受力/恢復狀態
+        is_under_pressure = (self.current_push_steps > 0) or (self.post_push_steps > 0)
+
         # 判定是否站立
         is_standing = (current_z > -0.13) and (abs(rpy[0]) < 1.0) and (abs(rpy[1]) < 1.0)
         
@@ -209,16 +212,18 @@ class PlenWalkEnv(gym.Env):
         r_vel = 0 * (vel[0]**2 + vel[1]**2)
         
         # 3. 穩定性懲罰
-        r_stable = -0.2 * (abs(rpy[0]) + abs(rpy[1]))
+        r_stable = -0.5 * (abs(rpy[0]) + abs(rpy[1]))
         
-        # 4.姿勢懲罰 (Pose Penalty)
-        r_pose = -3 * np.sum(np.square(self.current_real_pos))
+        #4.姿勢懲罰
+        if is_under_pressure:
+            r_pose = 0.0 
+        else:
+            r_pose = -1 * np.sum(np.square(self.current_real_pos))
 
         # 5. 平滑度懲罰 (Smoothness)
         r_smooth = -0.5 * np.sum(np.square(action - self.prev_action))
         
         # 6. 抗推力獎勵 (包含推力期間 + 推力結束後的穩定期)
-        is_under_pressure = (self.current_push_steps > 0) or (self.post_push_steps > 0)
         r_resist = 5.0 if is_under_pressure and is_standing else 0.0
 
         # 7.懲罰偏離正面
