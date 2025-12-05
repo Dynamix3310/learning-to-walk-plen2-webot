@@ -205,24 +205,33 @@ class PlenWalkEnv(gym.Env):
         # 1. 存活獎勵
         r_alive = 10.0 if is_standing else 0.0
         
-        # 2. 速度懲罰
-        r_vel = -0.5 * (vel[0]**2 + vel[1]**2)
+        # 2. 速度懲罰(暫時停用)
+        r_vel = 0 * (vel[0]**2 + vel[1]**2)
         
         # 3. 穩定性懲罰
         r_stable = -0.2 * (abs(rpy[0]) + abs(rpy[1]))
         
         # 4.姿勢懲罰 (Pose Penalty)
-        r_pose = -5 * np.sum(np.square(self.current_real_pos))
+        r_pose = -3 * np.sum(np.square(self.current_real_pos))
 
         # 5. 平滑度懲罰 (Smoothness)
-        r_smooth = -0.05 * np.sum(np.square(action - self.prev_action))
+        r_smooth = -0.5 * np.sum(np.square(action - self.prev_action))
         
         # 6. 抗推力獎勵 (包含推力期間 + 推力結束後的穩定期)
         is_under_pressure = (self.current_push_steps > 0) or (self.post_push_steps > 0)
         r_resist = 5.0 if is_under_pressure and is_standing else 0.0
-        
-        reward = r_alive + r_vel + r_stable + r_pose + r_smooth + r_resist
-        
+
+        # 7.懲罰偏離正面
+        r_facing = -1 * abs(rpy[2])
+
+        #8.位置偏移懲罰
+        current_pos = self.robot_node.getPosition()
+        dx = current_pos[0] - self.initial_translation[0]
+        dy = current_pos[1] - self.initial_translation[1]
+        r_pos_drift = -1.5 * (dx**2 + dy**2)
+
+        reward = r_alive + r_vel + r_stable + r_pose + r_smooth + r_resist + r_facing + r_pos_drift
+
         terminated = False
         truncated = False
         if current_z < -0.13 or abs(rpy[0]) > 1.0 or abs(rpy[1]) > 1.0: 
