@@ -110,8 +110,8 @@ class PlenWalkEnv(gym.Env):
         
         # Push Logic
         self.PUSH_INTERVAL_SEC = 4.0
-        self.PUSH_DURATION_SEC = 0.5
-        self.MAX_FORCE_MAGNITUDE = 0.5
+        self.PUSH_DURATION_SEC = 1.5#可以拉長(0.5)
+        self.MAX_FORCE_MAGNITUDE = 0.7
         self.push_interval_steps = int(self.PUSH_INTERVAL_SEC * 1000 / self.timestep)
         self.push_duration_steps = int(self.PUSH_DURATION_SEC * 1000 / self.timestep)
         self.push_force = np.zeros(3)
@@ -161,7 +161,7 @@ class PlenWalkEnv(gym.Env):
         # 1. 觸發新的推力
         if self.step_count > 0 and self.step_count % self.push_interval_steps == 0:
             angle = np.random.uniform(0, 2 * np.pi)
-            force_mag = np.random.uniform(0.25, self.MAX_FORCE_MAGNITUDE)
+            force_mag = np.random.uniform(0.5, self.MAX_FORCE_MAGNITUDE)#=========================太小力==============
             self.current_force_vec = [force_mag * np.cos(angle),force_mag * np.sin(angle), 0]
             self.current_push_steps = self.push_duration_steps
             self.post_push_steps = 0 # 新推力開始，重置後續穩定計時
@@ -212,13 +212,13 @@ class PlenWalkEnv(gym.Env):
         r_vel = 0 * (vel[0]**2 + vel[1]**2)
         
         # 3. 穩定性懲罰
-        r_stable = -0.5 * (abs(rpy[0]) + abs(rpy[1]))
+        r_stable = -3 * (abs(rpy[0]) + abs(rpy[1]))
         
         #4.姿勢懲罰
         if is_under_pressure:
             r_pose = 0.0 
         else:
-            r_pose = -1 * np.sum(np.square(self.current_real_pos))
+            r_pose = -1.5 * np.sum(np.square(self.current_real_pos))
 
         # 5. 平滑度懲罰 (Smoothness)
         r_smooth = -0.5 * np.sum(np.square(action - self.prev_action))
