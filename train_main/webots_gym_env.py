@@ -176,7 +176,7 @@ class PlenWalkEnv(gym.Env):
             # [新增] 當推力剛好結束的瞬間，開啟「後續穩定期 (Post-Push)」
             if self.current_push_steps == 0:
                 # 設定 1.5 秒的穩定期，這段時間若不倒，獎勵照算
-                self.post_push_steps = int(1.5 * 1000 / self.timestep) 
+                self.post_push_steps = int(3 * 1000 / self.timestep) 
         
         # 3. 處理後續穩定期 (Post-Push)
         elif self.post_push_steps > 0:
