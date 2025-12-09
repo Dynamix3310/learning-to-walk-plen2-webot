@@ -23,6 +23,7 @@ import math
 import torch
 from controller import Supervisor
 from actuator_net import ActuatorModel
+from collections import deque
 
 class PlenWalkEnv(gym.Env):
     def __init__(self):
@@ -97,9 +98,16 @@ class PlenWalkEnv(gym.Env):
                 self.initial_masses[part] = field.getFloat()
 
         # Spaces
+        self.n_stack = 10  #堆疊最近幾幀
+        self.frames = deque(maxlen=self.n_stack)
+        self.single_obs_dim = 49
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(self.num_motors,), dtype=np.float32)
-        obs_dim = 3 + 3 + 3 + 12 + 12 + 12 + 1 + 3
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32)
+        self.observation_space = spaces.Box(
+            low=-np.inf, 
+            high=np.inf, 
+            shape=(self.single_obs_dim * self.n_stack,), 
+            dtype=np.float32
+        )
 
         # State Init
         self.hist_real = np.full((self.num_motors, self.actuator.hist_len), self.SERVO_OFFSET)
@@ -110,16 +118,32 @@ class PlenWalkEnv(gym.Env):
         
         # Push Logic
         self.PUSH_INTERVAL_SEC = 4.0
-        self.PUSH_DURATION_SEC = 1.5#可以拉長(0.5)
+        self.PUSH_DURATION_SEC = 1.5
         self.MAX_FORCE_MAGNITUDE = 0.5
         self.push_interval_steps = int(self.PUSH_INTERVAL_SEC * 1000 / self.timestep)
         self.push_duration_steps = int(self.PUSH_DURATION_SEC * 1000 / self.timestep)
         self.push_force = np.zeros(3)
         self.current_push_steps = 0
-        self.post_push_steps = 0 # [新增] 推力結束後的穩定期計數器
+        self.post_push_steps = 0
         self.current_force_vec = [0, 0, 0]
         self.step_count = 0
 
+        self.reward_weights = {
+            'alive': 2.0,       
+            'stable': 0.5,      
+            'smooth': 0.05,     
+            'pose': 0.2,        
+            'facing': 0.3,      
+            'drift': 0.3,       
+            'resist': 1.0,     
+            'jvel': 0.1,        
+            'symmetry': 0.2     
+        }
+
+    def _get_stacked_obs(self):
+        assert len(self.frames) == self.n_stack, "Frame buffer not full!"
+        return np.concatenate(list(self.frames)).astype(np.float32)
+    
     def _get_projected_gravity(self, rpy):
         roll, pitch, yaw = rpy
         gx = math.sin(pitch)
@@ -159,7 +183,7 @@ class PlenWalkEnv(gym.Env):
         self.push_force = np.zeros(3)
         
         # 1. 觸發新的推力
-        if self.step_count > 0 and self.step_count % self.push_interval_steps == 0:
+        if self.step_count > 0 and self.step_count % self.push_interval_steps == 0 and 0:#and 0來暫時取消推力
             angle = np.random.uniform(0, 2 * np.pi)
             force_mag = np.random.uniform(0.3, self.MAX_FORCE_MAGNITUDE)#=========================太小力==============
             self.current_force_vec = [force_mag * np.cos(angle),force_mag * np.sin(angle), 0]
@@ -193,8 +217,16 @@ class PlenWalkEnv(gym.Env):
         grav = self._get_projected_gravity(rpy)
         joint_vel = (webots_real_rad - self.current_real_pos) / (self.timestep / 1000.0)
         
-        obs = np.concatenate([rpy, gyro, grav, self.current_real_pos, joint_vel, self.prev_action, [self.current_friction], self.push_force]).astype(np.float32)
-        
+        current_frame_obs = np.concatenate([
+            rpy, gyro, grav, 
+            self.current_real_pos, 
+            joint_vel, # 確保這是根據 ActuatorNet 算出來的
+            self.prev_action, 
+            [self.current_friction], 
+            self.push_force
+        ]).astype(np.float32)
+        self.frames.append(current_frame_obs)
+        obs = self._get_stacked_obs()
         # --- Reward Function (修正版) ---
         vel = self.robot_node.getVelocity()
         current_z = self.robot_node.getPosition()[2]
@@ -203,48 +235,84 @@ class PlenWalkEnv(gym.Env):
         is_under_pressure = (self.current_push_steps > 0) or (self.post_push_steps > 0)
 
         # 判定是否站立
-        is_standing = (current_z > -0.13) and (abs(rpy[0]) < 1.0) and (abs(rpy[1]) < 1.0)
-        
+        is_standing = (current_z > -0.14) and (abs(rpy[0]) < 1.0) and (abs(rpy[1]) < 1.0)
+
+        # 是否嚴重傾斜
+        is_tilting = (abs(rpy[0]) > 0.15) or (abs(rpy[1]) > 0.15)
+
         # 1. 存活獎勵
-        r_alive = 10.0 if is_standing else 0.0
+        r_alive = 1 if is_standing else 0.0
         
         # 2. 速度懲罰(暫時停用)
         r_vel = 0 * (vel[0]**2 + vel[1]**2)
         
         # 3. 穩定性懲罰
-        r_stable = -3 * (abs(rpy[0]) + abs(rpy[1]))
-        
+        r_stable = -0.005 * -np.tanh((abs(rpy[0]) + abs(rpy[1]))*10)
+
         #4.姿勢懲罰
         if is_under_pressure:
             r_pose = 0.0 
         else:
-            r_pose = -1.5 * np.sum(np.square(self.current_real_pos))
+            r_pose = -0.0005 * -np.tanh(np.sum(np.square(self.current_real_pos))*1.0)
 
         # 5. 平滑度懲罰 (Smoothness)
-        r_smooth = -0.5 * np.sum(np.square(action - self.prev_action))
+        r_smooth = -0.005 * -np.tanh(np.sum(np.square(action - self.prev_action))*5.0)
         
         # 6. 抗推力獎勵 (包含推力期間 + 推力結束後的穩定期)
-        r_resist = 5.0 if is_under_pressure and is_standing else 0.0
+        r_resist = 1.0 if is_under_pressure and is_standing else 0.0
 
         # 7.懲罰偏離正面
-        r_facing = -1 * abs(rpy[2])
+        r_facing = -np.tanh((rpy[2]**2) * 5.0)
 
         #8.位置偏移懲罰
         current_pos = self.robot_node.getPosition()
         dx = current_pos[0] - self.initial_translation[0]
         dy = current_pos[1] - self.initial_translation[1]
-        r_pos_drift = -1.5 * (dx**2 + dy**2)
+        r_pos_drift = -np.tanh((dx**2 + dy**2)* 2.0)
 
-        reward = r_alive + r_vel + r_stable + r_pose + r_smooth + r_resist + r_facing + r_pos_drift
+        # 9.關節速度懲罰
+        r_jvel = -np.tanh(np.sum(np.square(joint_vel))*0.1)
+
+        if is_under_pressure or is_tilting:
+            r_symmetry = 0.0 # 危急時刻允許不對稱 (救球)
+        else:
+            left_legs = self.current_real_pos[0:6]
+            right_legs = self.current_real_pos[6:12]
+            symmetry_loss = np.sum(np.abs(np.abs(left_legs) - np.abs(right_legs)))
+            r_symmetry = -np.tanh(symmetry_loss*5.0)
+
+        reward = (
+            self.reward_weights['alive']    * r_alive +
+            self.reward_weights['stable']   * r_stable +
+            self.reward_weights['smooth']   * r_smooth +
+            self.reward_weights['pose']     * r_pose +
+            self.reward_weights['facing']   * r_facing +
+            self.reward_weights['drift']    * r_pos_drift +
+            self.reward_weights['resist']   * r_resist +
+            self.reward_weights['jvel']     * r_jvel +
+            self.reward_weights['symmetry'] * r_symmetry
+        )
 
         terminated = False
         truncated = False
         if current_z < -0.13 or abs(rpy[0]) > 1.0 or abs(rpy[1]) > 1.0: 
             terminated = True
-            reward -= 10.0
+            reward -= 1.0
             
         self.prev_action = action
-        return obs, reward, terminated, truncated, {}
+        info = {
+            "rewards/r_alive": r_alive,
+            "rewards/r_stable": r_stable,
+            "rewards/r_pose": r_pose,
+            "rewards/r_smooth": r_smooth,
+            "rewards/r_jvel": r_jvel,
+            "rewards/r_symmetry": r_symmetry,
+            "rewards/r_resist": r_resist,
+            "rewards/r_facing": r_facing,
+            "rewards/r_pos_drift": r_pos_drift,
+            "rewards/total_reward": reward
+        }
+        return obs, reward, terminated, truncated, info
 
     def reset(self, seed=None, options=None):
         gc.collect() 
@@ -299,5 +367,17 @@ class PlenWalkEnv(gym.Env):
         gyro = self.gyro.getValues()
         grav = self._get_projected_gravity(rpy)
         
-        obs = np.concatenate([rpy, gyro, grav, np.zeros(12), np.zeros(12), np.zeros(12), [self.current_friction], [0,0,0]]).astype(np.float32)
-        return obs, {}
+        current_frame_obs = np.concatenate([
+            rpy, gyro, grav, 
+            np.zeros(12), # Pos 
+            np.zeros(12), # Vel
+            np.zeros(12), # Prev Action
+            [self.current_friction], 
+            [0,0,0]       # Push Force
+        ]).astype(np.float32)
+        self.frames.clear()
+        for _ in range(self.n_stack):
+            self.frames.append(current_frame_obs)
+        return self._get_stacked_obs(), {}
+    
+    

@@ -19,22 +19,51 @@ os.environ['WEBOTS_CONTROLLER_URL'] = 'ipc://1234/MyPlenBot'
 
 import gymnasium as gym
 from stable_baselines3 import PPO
-from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.callbacks import CheckpointCallback, BaseCallback
 from webots_gym_env import PlenWalkEnv
+import numpy as np
 
+class RewardLoggerCallback(BaseCallback):
+    def __init__(self, verbose=0):
+        super(RewardLoggerCallback, self).__init__(verbose)
+        self.reward_stats = {}
+
+    def _on_step(self) -> bool:
+        infos = self.locals.get("infos", [{}])
+        
+        if infos:
+            info = infos[0]
+            
+            for key, value in info.items():
+                if key.startswith("rewards/"):
+                    self.logger.record(key, value)
+                    if key not in self.reward_stats:
+                        self.reward_stats[key] = {"max": -np.inf, "min": np.inf}
+                    
+                    self.reward_stats[key]["max"] = max(self.reward_stats[key]["max"], value)
+                    self.reward_stats[key]["min"] = min(self.reward_stats[key]["min"], value)
+
+        return True
+        
+    def _on_rollout_end(self) -> None:
+        print("\n--- Reward Statistics (Rollout End) ---")
+        for key, stats in self.reward_stats.items():
+            print(f"{key}: Min={stats['min']:.4f}, Max={stats['max']:.4f}")
+        print("---------------------------------------")
+        
 def main():
     print("正在初始化 Webots 環境...")
     env = PlenWalkEnv()
     print("環境初始化成功！準備開始訓練...")
 
-    # [設定] 自動儲存機制
+    reward_callback = RewardLoggerCallback()
     # 每 100,000 步儲存一次模型到 ./models/ 資料夾
     checkpoint_callback = CheckpointCallback(
         save_freq=100000,
         save_path='./models/',
         name_prefix='ppo_plen_model'
     )
-
+    callbacks = [checkpoint_callback, reward_callback]
     # 定義 PPO Teacher Policy
     policy_kwargs = dict(
         net_arch=[dict(pi=[256, 256], vf=[256, 256])] 
@@ -44,9 +73,9 @@ def main():
         "MlpPolicy",
         env,
         verbose=1,
-        learning_rate=3e-4,
-        n_steps=2048,
-        batch_size=64,
+        learning_rate=5e-5,
+        n_steps=4096,
+        batch_size=128,
         gamma=0.99,
         gae_lambda=0.95,
         clip_range=0.2,
@@ -58,7 +87,7 @@ def main():
     try:
         model.learn(
             total_timesteps=200000000, 
-            callback=checkpoint_callback # 加入 callback
+            callback=callbacks # 加入 callback
         )
         
         # 訓練結束儲存最終版
