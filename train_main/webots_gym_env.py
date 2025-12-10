@@ -291,7 +291,7 @@ class PlenWalkEnv(gym.Env):
             self.reward_weights['resist']   * r_resist +
             self.reward_weights['jvel']     * r_jvel +
             self.reward_weights['symmetry'] * r_symmetry
-        )
+        )/1000.0
 
         terminated = False
         truncated = False

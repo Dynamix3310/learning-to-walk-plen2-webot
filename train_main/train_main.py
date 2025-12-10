@@ -22,6 +22,12 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback, BaseCallback
 from webots_gym_env import PlenWalkEnv
 import numpy as np
+from typing import Callable
+
+def linear_schedule(initial_value: float) -> Callable[[float], float]:
+    def func(progress_remaining: float) -> float:
+        return progress_remaining * initial_value
+    return func
 
 class RewardLoggerCallback(BaseCallback):
     def __init__(self, verbose=0):
@@ -73,20 +79,22 @@ def main():
         "MlpPolicy",
         env,
         verbose=1,
-        learning_rate=5e-5,
+        learning_rate=linear_schedule(3e-4),
         n_steps=4096,
-        batch_size=128,
+        batch_size=256,
+        ent_coef=0.01,
         gamma=0.99,
         gae_lambda=0.95,
         clip_range=0.2,
+        max_grad_norm=0.5,
         policy_kwargs=policy_kwargs,
         tensorboard_log="./ppo_plen_teacher_logs/"
     )
     
-    print("開始訓練 Teacher Policy (總計 200萬步)...")
+    print("開始訓練 Teacher Policy (總計 2000萬步)...")
     try:
         model.learn(
-            total_timesteps=200000000, 
+            total_timesteps=20000000, 
             callback=callbacks # 加入 callback
         )
         
