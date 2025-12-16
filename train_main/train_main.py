@@ -23,6 +23,7 @@ from stable_baselines3.common.callbacks import CheckpointCallback, BaseCallback
 from webots_gym_env import PlenWalkEnv
 import numpy as np
 from typing import Callable
+import torch
 
 def linear_schedule(initial_value: float) -> Callable[[float], float]:
     def func(progress_remaining: float) -> float:
@@ -90,6 +91,20 @@ def main():
         policy_kwargs=policy_kwargs,
         tensorboard_log="./ppo_plen_teacher_logs/"
     )
+
+    print("正在調整 Policy 權重，使初始輸出接近 0...")
+    with torch.no_grad():
+        # model.policy.action_net 是 Actor 網路輸出動作的最後一層 (Linear Layer)
+        
+        # 1. 將權重縮小 (乘以 0.01 或更小)
+        # 這樣輸入訊號經過這層後，數值會變得很小
+        model.policy.action_net.weight.data *= 0.01
+        
+        # 2. 將 Bias 歸零
+        # 避免有固定的偏差導致馬達往某個方向轉
+        model.policy.action_net.bias.data.fill_(0.0)
+        
+    print("權重調整完成。")
     
     print("開始訓練 Teacher Policy (總計 2000萬步)...")
     try:
