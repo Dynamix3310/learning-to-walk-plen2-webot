@@ -79,14 +79,15 @@ def main():
         "MlpPolicy",
         env,
         verbose=1,
-        learning_rate=linear_schedule(3e-4),
+        learning_rate=linear_schedule(5e-5),
         n_steps=4096,
         batch_size=256,
-        ent_coef=0.01,
+        ent_coef=0.005,
         gamma=0.99,
         gae_lambda=0.95,
         clip_range=0.2,
         max_grad_norm=0.5,
+        target_kl=0.03,
         policy_kwargs=policy_kwargs,
         tensorboard_log="./ppo_plen_teacher_logs/"
     )

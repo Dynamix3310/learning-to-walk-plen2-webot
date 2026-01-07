@@ -130,14 +130,14 @@ class PlenWalkEnv(gym.Env):
 
         self.reward_weights = {
             'alive': 2.0,       
-            'stable': 0.5,      
-            'smooth': 0.05,     
-            'pose': 0.2,        
+            'stable': 0.4,      
+            'smooth': 0.1,     
+            'pose': 0.7,        
             'facing': 0.3,      
-            'drift': 0.3,       
+            'drift': 3.0, #1.0      
             'resist': 1.0,     
-            'jvel': 0.1,        
-            'symmetry': 0.2     
+            'jvel': 0.05,        
+            'symmetry': 0.5     
         }
 
     def _get_stacked_obs(self):
@@ -291,7 +291,7 @@ class PlenWalkEnv(gym.Env):
             self.reward_weights['resist']   * r_resist +
             self.reward_weights['jvel']     * r_jvel +
             self.reward_weights['symmetry'] * r_symmetry
-        )/1000.0
+        )/10.0
 
         terminated = False
         truncated = False
